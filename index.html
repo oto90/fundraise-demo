@@ -116,23 +116,33 @@
         donateBtn.addEventListener('click', function(e) {
           console.log("🖱️ Blue button clicked");
           sendCheckoutEvent('blue_button_click');
-        });
+        }, true); // Use capture phase
         console.log("✅ Click listener attached to blue donate button");
+        
+        // Additional diagnostic: log button properties
+        console.log("📊 Button element:", donateBtn);
+        console.log("📊 Button visible?", donateBtn.offsetParent !== null);
+        console.log("📊 Button dimensions:", donateBtn.getBoundingClientRect());
+      } else {
+        console.error("❌ Blue button not found!");
       }
 
       // METHOD 2: Track ANY link with href="#XJKDHSTQ"
       document.addEventListener('click', function(e) {
+        console.log("🖱️ GLOBAL CLICK detected on:", e.target);
+        console.log("   Tag:", e.target.tagName, "| Href:", e.target.href);
+        
         var target = e.target;
         // Check if clicked element or any parent is a link to #XJKDHSTQ
         while (target && target !== document) {
           if (target.tagName === 'A' && target.getAttribute('href') === '#XJKDHSTQ') {
-            console.log("🖱️ FundraiseUp link clicked (href=#XJKDHSTQ)");
+            console.log("✅ Found #XJKDHSTQ link in click path!");
             sendCheckoutEvent('fundraiseup_link_click');
             break;
           }
           target = target.parentElement;
         }
-      });
+      }, true); // Use capture phase
       console.log("✅ Global click listener attached for all #XJKDHSTQ links");
 
       // METHOD 3: Use FundraiseUp API events (if they fire)
