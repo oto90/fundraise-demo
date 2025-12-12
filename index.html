@@ -110,14 +110,20 @@
       });
       console.log("✅ Test event 'page_ready' sent to GA4");
 
-      // METHOD 1: Track direct button clicks (works for custom blue button)
+      // METHOD 1: Track direct button clicks using MOUSEDOWN (fires before click is stopped)
       var donateBtn = document.getElementById('donate-button');
       if (donateBtn) {
+        donateBtn.addEventListener('mousedown', function(e) {
+          console.log("🖱️ Blue button MOUSEDOWN detected");
+          sendCheckoutEvent('blue_button_mousedown');
+        }, true);
+        
         donateBtn.addEventListener('click', function(e) {
-          console.log("🖱️ Blue button clicked");
+          console.log("🖱️ Blue button CLICK detected");
           sendCheckoutEvent('blue_button_click');
-        }, true); // Use capture phase
-        console.log("✅ Click listener attached to blue donate button");
+        }, true);
+        
+        console.log("✅ Click + Mousedown listeners attached to blue donate button");
         
         // Additional diagnostic: log button properties
         console.log("📊 Button element:", donateBtn);
@@ -127,7 +133,20 @@
         console.error("❌ Blue button not found!");
       }
 
-      // METHOD 2: Track ANY link with href="#XJKDHSTQ"
+      // METHOD 2: Track ANY link with href="#XJKDHSTQ" using MOUSEDOWN
+      document.addEventListener('mousedown', function(e) {
+        var target = e.target;
+        // Check if clicked element or any parent is a link to #XJKDHSTQ
+        while (target && target !== document) {
+          if (target.tagName === 'A' && target.getAttribute('href') === '#XJKDHSTQ') {
+            console.log("🖱️ #XJKDHSTQ link MOUSEDOWN detected");
+            sendCheckoutEvent('fundraiseup_link_mousedown');
+            break;
+          }
+          target = target.parentElement;
+        }
+      }, true);
+      
       document.addEventListener('click', function(e) {
         console.log("🖱️ GLOBAL CLICK detected on:", e.target);
         console.log("   Tag:", e.target.tagName, "| Href:", e.target.href);
@@ -143,7 +162,7 @@
           target = target.parentElement;
         }
       }, true); // Use capture phase
-      console.log("✅ Global click listener attached for all #XJKDHSTQ links");
+      console.log("✅ Global click + mousedown listeners attached for all #XJKDHSTQ links");
 
       // METHOD 3: Use FundraiseUp API events (if they fire)
       if (typeof FundraiseUp !== 'undefined') {
