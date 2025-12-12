@@ -4,14 +4,17 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Helping Hand — Fundraise Up GA4 Demo</title>
-
-  <!-- GA4 -->
+  
+  <!-- Google Analytics 4 - MUST load first -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-T9JS51CFMT"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){ dataLayer.push(arguments); }
     gtag("js", new Date());
     gtag("config", "G-T9JS51CFMT");
+    
+    // Debug: confirm gtag is working
+    console.log("GA4 initialized");
   </script>
 
   <!-- Enable Test Mode BEFORE widget loads -->
@@ -44,34 +47,90 @@
     })(window, document, "script", "FundraiseUp", "AEMZUDUM");
   </script>
 </head>
-
 <body>
   <h1>Helping Hand — Fundraise Up GA4 Demo</h1>
-
+  
   <!-- Custom Donate Button -->
-  <a href="#XJKDHSTQ"></a>
+  <a href="#XJKDHSTQ" id="donate-button" style="display: inline-block; padding: 12px 24px; background: #2196F3; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">Donate Now</a>
 
-  <!-- Track the click on the Donate button -->
+  <!-- ALL tracking code AFTER the body content -->
   <script>
-    document
-      .querySelector('a[href="#XJKDHSTQ"]')
-      .addEventListener('click', function () {
-        gtag('event', 'checkout_opened', {
-          event_category: 'fundraiseup',
-          event_label: 'clicked_donate_button'
+    // Wait for DOM to be fully ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initTracking);
+    } else {
+      initTracking();
+    }
+
+    function initTracking() {
+      console.log("Initializing tracking...");
+
+      // Test event to verify GA4 is receiving custom events
+      gtag('event', 'page_ready', {
+        event_category: 'test',
+        event_label: 'tracking_initialized'
+      });
+      console.log("Test event 'page_ready' sent to GA4");
+
+      // Method 1: Track button clicks directly (fallback method)
+      var donateBtn = document.getElementById('donate-button');
+      if (donateBtn) {
+        donateBtn.addEventListener('click', function(e) {
+          console.log("Donate button clicked - sending checkout_opened event");
+          gtag('event', 'checkout_opened', {
+            event_category: 'fundraiseup',
+            event_label: 'donate_button_clicked'
+          });
         });
-      });
+        console.log("Click listener attached to donate button");
+      } else {
+        console.error("Donate button not found!");
+      }
+
+      // Method 2: Use FundraiseUp API events (primary method)
+      // Register handlers AFTER widget loads
+      if (typeof FundraiseUp !== 'undefined') {
+        
+        // Track checkout open
+        FundraiseUp.on('checkout_open', function(data) {
+          console.log("FundraiseUp checkout_open event fired:", data);
+          gtag('event', 'checkout_opened', {
+            event_category: 'fundraiseup',
+            event_label: 'checkout_modal_opened'
+          });
+          console.log("GA4 event 'checkout_opened' sent");
+        });
+
+        // Track donation complete
+        FundraiseUp.on('donation_complete', function(data) {
+          console.log("FundraiseUp donation_complete event fired:", data);
+          gtag('event', 'donation_completed', {
+            event_category: 'fundraiseup',
+            event_label: 'test_donation',
+            value: data && data.amount ? data.amount : 0,
+            currency: data && data.currency ? data.currency : 'USD'
+          });
+          console.log("GA4 event 'donation_completed' sent");
+        });
+
+        console.log("FundraiseUp event handlers registered");
+      } else {
+        console.error("FundraiseUp object not found!");
+      }
+    }
   </script>
 
-  <!-- Donation completed event -->
-  <script>
-    FundraiseUp.on('donation_complete', function (data) {
-      gtag('event', 'donation_completed', {
-        event_category: 'fundraiseup',
-        value: data?.amount
-      });
-    });
-  </script>
-
+  <!-- Debug panel -->
+  <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-radius: 8px; font-family: monospace; font-size: 12px;">
+    <h3 style="margin-top: 0;">Debug Info</h3>
+    <p><strong>GA4 Property:</strong> G-T9JS51CFMT</p>
+    <p><strong>Test Mode:</strong> Enabled</p>
+    <p><strong>Form ID:</strong> XJKDHSTQ</p>
+    <p style="color: #d32f2f;"><strong>Check browser console for event logs</strong></p>
+    <p>Open GA4 Realtime → Events to see:<br>
+    • page_ready (test event)<br>
+    • checkout_opened (when modal opens)<br>
+    • donation_completed (after test donation)</p>
+  </div>
 </body>
 </html>
