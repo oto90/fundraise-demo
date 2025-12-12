@@ -14,7 +14,7 @@
     gtag("config", "G-T9JS51CFMT");
   </script>
 
-  <!-- IMPORTANT: enable test mode BEFORE loading FU -->
+  <!-- Enable Test Mode BEFORE widget loads -->
   <script>
     window.fundraiseup_livemode = false;
   </script>
@@ -48,18 +48,23 @@
 <body>
   <h1>Helping Hand — Fundraise Up GA4 Demo</h1>
 
-  <!-- Custom Fundraise Up button (blue version) -->
+  <!-- Custom Donate Button -->
   <a href="#XJKDHSTQ"></a>
 
+  <!-- Track the click on the Donate button -->
   <script>
-    // Attach listeners after widget is ready
-    FundraiseUp.on('checkout_open', function (data) {
-      gtag('event', 'checkout_opened', {
-        event_category: 'fundraiseup',
-        value: data?.amount
+    document
+      .querySelector('a[href="#XJKDHSTQ"]')
+      .addEventListener('click', function () {
+        gtag('event', 'checkout_opened', {
+          event_category: 'fundraiseup',
+          event_label: 'clicked_donate_button'
+        });
       });
-    });
+  </script>
 
+  <!-- Donation completed event -->
+  <script>
     FundraiseUp.on('donation_complete', function (data) {
       gtag('event', 'donation_completed', {
         event_category: 'fundraiseup',
