@@ -1,88 +1,83 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Helping Hand — Fundraise Up GA4 Demo</title>
 
-  <!-- GA4 -->
+  <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-T9JS51CFMT"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
-    function gtag() { dataLayer.push(arguments); }
+    function gtag(){ dataLayer.push(arguments); }
     gtag("js", new Date());
     gtag("config", "G-T9JS51CFMT");
   </script>
 
-  <!-- Fundraise Up -->
+  <!-- FundraiseUp widget -->
   <script>
+    window.fundraiseup_livemode = false;
+
+    // Load FundraiseUp script
     (function (w, d, s, n, a) {
       if (!w[n]) {
-        var l = "call,catch,on,once,set,then,track".split(","),
-            i,
-            o = function (n) {
-              return typeof n === "function"
-                ? o.l.push([arguments]) && o
-                : function () {
-                    return o.l.push([n, arguments]) && o;
-                  };
-            },
-            t = d.getElementsByTagName(s)[0],
+        var t = d.getElementsByTagName(s)[0],
             j = d.createElement(s);
         j.async = true;
         j.src = "https://cdn.fundraiseup.com/widget/" + a;
         t.parentNode.insertBefore(j, t);
-        o.s = Date.now();
-        o.v = 4;
-        o.h = w.location.href;
-        o.l = [];
-        for (i = 0; i < 7; i++) o[l[i]] = o(l[i]);
+
+        var o = function (n) {
+          return function () {
+            (o.l = o.l || []).push([n, arguments]);
+          };
+        };
+
         w[n] = o;
       }
     })(window, document, "script", "FundraiseUp", "AEMZUDUM");
-
-    // Test mode
-    window.fundraiseup_livemode = false;
   </script>
+
 </head>
-
 <body>
-  <h1>Helping Hand — Fundraise Up Demo</h1>
 
-  <!-- The donation button -->
-  <a id="donate-btn" href="#XJKDHSTQ" 
-     style="padding:12px 20px; background:#4CAF50; color:white; text-decoration:none;">
-     Donate
+  <h1>Helping Hand — Fundraise Up GA4 Demo</h1>
+
+  <!-- Donation button -->
+  <a id="donate-btn"
+     href="#XJKDHSTQ"
+     style="padding: 12px 20px; background: #4caf50; color: #fff; text-decoration:none;">
+    Donate
   </a>
 
-  <!-- Tracking -->
   <script>
-    // 1. Track when user clicks the button
-    document.getElementById("donate-btn").addEventListener("click", function () {
-      gtag("event", "checkout_button_click", {
-        event_category: "fundraiseup_demo"
+    // Track user clicking donate button → opening checkout
+    document.getElementById("donate-btn").addEventListener("click", () => {
+      gtag("event", "checkout_opened", {
+        event_category: "fundraiseup_demo",
+        event_label: "donate_button_click",
       });
     });
 
-    // 2. Wait until widget is fully loaded
-    FundraiseUp.on("ready", function (api) {
+    // Wait for FundraiseUp to load
+    document.addEventListener("fundraiseup-ready", () => {
 
-      // Track when checkout actually opens
-      api.on("checkout.opened", function () {
+      // Listen for checkout modal fully opened
+      FundraiseUp.on("checkout.open", () => {
         gtag("event", "checkout_opened", {
-          event_category: "fundraiseup_demo"
+          event_category: "fundraiseup_demo",
+          event_label: "checkout_opened_modal"
         });
       });
 
-      // Track donation completion
-      api.on("donation.completed", function (donation) {
+      // Listen for donation completion
+      FundraiseUp.on("donation.complete", (data) => {
         gtag("event", "donation_completed", {
           event_category: "fundraiseup_demo",
-          value: donation.amount,
-          currency: donation.currency
+          value: data.amount,
+          currency: data.currency,
         });
       });
-
     });
   </script>
 
