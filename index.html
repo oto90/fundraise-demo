@@ -77,8 +77,8 @@
       if (data && typeof data === 'object') {
         console.log("📦 dataLayer event:", data.event, data);
         
-        // Listen for checkoutOpen event
-        if (data.event === 'checkoutOpen') {
+        // Listen for FundraiseUp.checkoutOpen event (note the capital O and the prefix)
+        if (data.event === 'FundraiseUp.checkoutOpen') {
           console.log("🎉🎉🎉 CHECKOUT OPENED via dataLayer! 🎉🎉🎉");
           console.log("   Event data:", data);
           
@@ -91,8 +91,8 @@
           console.log("✅ checkout_opened sent to GA4");
         }
         
-        // Listen for donationComplete event
-        if (data.event === 'donationComplete') {
+        // Listen for FundraiseUp.donationComplete event
+        if (data.event === 'FundraiseUp.donationComplete') {
           console.log("🎉🎉🎉 DONATION COMPLETED via dataLayer! 🎉🎉🎉");
           console.log("   Event data:", data);
           
@@ -109,8 +109,8 @@
           console.log("✅ donation_completed sent to GA4 (amount: " + amount + " " + currency + ")");
         }
         
-        // Listen for checkoutClose event (optional, for debugging)
-        if (data.event === 'checkoutClose') {
+        // Listen for FundraiseUp.checkoutClose event (optional, for debugging)
+        if (data.event === 'FundraiseUp.checkoutClose') {
           console.log("ℹ️ Checkout closed via dataLayer");
         }
       }
@@ -119,7 +119,7 @@
     };
     
     console.log("✅ dataLayer event listener installed");
-    console.log("   Watching for: checkoutOpen, donationComplete, checkoutClose");
+    console.log("   Watching for: FundraiseUp.checkoutOpen, FundraiseUp.donationComplete, FundraiseUp.checkoutClose");
   </script>
 
   <!-- Debug panel -->
