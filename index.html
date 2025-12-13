@@ -5,18 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Helping Hand — Fundraise Up GA4 Demo</title>
   
-  <!-- Google Analytics 4 - MUST load first -->
+  <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-T9JS51CFMT"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){ dataLayer.push(arguments); }
     gtag("js", new Date());
     gtag("config", "G-T9JS51CFMT");
-    
-    console.log("✅ GA4 initialized");
   </script>
 
-  <!-- Enable Test Mode BEFORE widget loads -->
+  <!-- Enable Test Mode -->
   <script>
     window.fundraiseup_livemode = false;
   </script>
@@ -49,120 +47,110 @@
 <body>
   <h1>Helping Hand — Fundraise Up GA4 Demo</h1>
   
-  <!-- Custom Donate Button - FundraiseUp will replace this -->
+  <!-- Donate Button -->
   <a href="#XJKDHSTQ" id="donate-button"></a>
 
   <script>
-    console.log("🔧 Initializing dataLayer event tracking...");
+    console.log("🔧 Starting FundraiseUp + GA4 Integration");
     
     // Send test event
     gtag('event', 'page_ready', {
-      event_category: 'test',
-      event_label: 'tracking_initialized'
+      event_category: 'test'
     });
-    console.log("✅ Test event 'page_ready' sent to GA4");
 
-    // SOLUTION: Listen for FundraiseUp events pushed to dataLayer
-    // Save the original push function
+    // Override dataLayer.push to intercept FundraiseUp events
     var originalPush = window.dataLayer.push;
     
-    // Override dataLayer.push to intercept FundraiseUp events
     window.dataLayer.push = function() {
-      // Call the original push
       var result = originalPush.apply(window.dataLayer, arguments);
-      
-      // Check what was pushed
       var data = arguments[0];
       
       if (data && typeof data === 'object') {
-        console.log("📦 dataLayer event:", data.event, data);
+        console.log("📦 Event:", data.event);
         
-        // Listen for FundraiseUp.checkoutOpen event (note the capital O and the prefix)
+        // CHECKOUT OPENED
         if (data.event === 'FundraiseUp.checkoutOpen') {
-          console.log("🎉🎉🎉 CHECKOUT OPENED via dataLayer! 🎉🎉🎉");
-          console.log("   Event data:", data);
+          console.log("🎉 CHECKOUT OPENED");
           
           gtag('event', 'checkout_opened', {
             event_category: 'fundraiseup',
-            event_label: 'checkout_modal_opened',
-            non_interaction: false
+            event_label: 'checkout_modal_opened'
           });
           
           console.log("✅ checkout_opened sent to GA4");
         }
         
-        // Listen for FundraiseUp.donationComplete event
+        // DONATION COMPLETED
         if (data.event === 'FundraiseUp.donationComplete') {
-          console.log("🎉🎉🎉 DONATION COMPLETED via dataLayer! 🎉🎉🎉");
-          console.log("   Event data:", data);
+          console.log("🎉 DONATION COMPLETED");
+          console.log("   Full data:", data);
           
-          // Extract amount from the correct location in the FundraiseUp data structure
+          // Extract transaction details
           var amount = 0;
           var currency = 'USD';
+          var transactionId = '';
+          var campaignId = '';
+          var campaignName = '';
           
-          // Try multiple possible locations for amount
-          if (data.FundraiseUp && data.FundraiseUp.donation && data.FundraiseUp.donation.amount) {
-            amount = data.FundraiseUp.donation.amount;
-          } else if (data.ecommerce && data.ecommerce.purchase && data.ecommerce.purchase.actionField) {
-            amount = data.ecommerce.purchase.actionField.revenue || data.ecommerce.purchase.actionField.value || 0;
+          if (data.FundraiseUp && data.FundraiseUp.donation) {
+            amount = data.FundraiseUp.donation.amount || 0;
+            currency = data.FundraiseUp.donation.currency || 'USD';
+            transactionId = data.FundraiseUp.donation.id || '';
           }
           
-          // Extract currency
-          if (data.FundraiseUp && data.FundraiseUp.donation && data.FundraiseUp.donation.currency) {
-            currency = data.FundraiseUp.donation.currency;
-          } else if (data.ecommerce && data.ecommerce.currencyCode) {
-            currency = data.ecommerce.currencyCode;
+          if (data.FundraiseUp && data.FundraiseUp.campaign) {
+            campaignId = data.FundraiseUp.campaign.id || '';
+            campaignName = data.FundraiseUp.campaign.name || 'Donation';
           }
           
-          console.log("   Extracted amount:", amount, currency);
+          console.log("   Amount:", amount, currency);
+          console.log("   Transaction ID:", transactionId);
           
+          // Send custom donation_completed event
           gtag('event', 'donation_completed', {
             event_category: 'fundraiseup',
             event_label: 'test_donation',
             value: amount,
-            currency: currency
+            currency: currency,
+            transaction_id: transactionId
           });
           
-          console.log("✅ donation_completed sent to GA4 (amount: " + amount + " " + currency + ")");
-        }
-        
-        // Listen for FundraiseUp.checkoutClose event (optional, for debugging)
-        if (data.event === 'FundraiseUp.checkoutClose') {
-          console.log("ℹ️ Checkout closed via dataLayer");
+          console.log("✅ donation_completed sent");
+          
+          // Send GA4 purchase event for e-commerce tracking
+          gtag('event', 'purchase', {
+            transaction_id: transactionId,
+            value: amount,
+            currency: currency,
+            items: [{
+              item_id: campaignId,
+              item_name: campaignName,
+              item_category: 'Donation',
+              price: amount,
+              quantity: 1
+            }]
+          });
+          
+          console.log("✅ purchase event sent for e-commerce");
         }
       }
       
       return result;
     };
     
-    console.log("✅ dataLayer event listener installed");
-    console.log("   Watching for: FundraiseUp.checkoutOpen, FundraiseUp.donationComplete, FundraiseUp.checkoutClose");
+    console.log("✅ Tracking initialized");
   </script>
 
-  <!-- Debug panel -->
-  <div style="margin-top: 40px; padding: 20px; background: #f5f5f5; border-radius: 8px; font-family: monospace; font-size: 12px;">
-    <h3 style="margin-top: 0;">🔍 Debug Info</h3>
-    <p><strong>GA4 Property:</strong> G-T9JS51CFMT</p>
-    <p><strong>Test Mode:</strong> Enabled</p>
-    <p><strong>Form ID:</strong> XJKDHSTQ</p>
-    
-    <div style="background: white; padding: 12px; border-radius: 4px; margin-top: 12px;">
-      <p style="margin: 0 0 8px 0; font-weight: bold; color: #4caf50;">✅ Solution: dataLayer Event Listening</p>
-      <p style="margin: 8px 0;">FundraiseUp pushes events to the dataLayer. We're now intercepting those events and forwarding them to GA4.</p>
-      
-      <p style="margin: 12px 0 8px 0; font-weight: bold;">Expected behavior:</p>
-      <ol style="margin: 0; padding-left: 20px; line-height: 1.6;">
-        <li>Click donate button</li>
-        <li>See "🎉 CHECKOUT OPENED via dataLayer!" in console</li>
-        <li>See checkout_opened in GA4 Realtime</li>
-        <li>Complete donation</li>
-        <li>See "🎉 DONATION COMPLETED via dataLayer!" in console</li>
-        <li>See donation_completed in GA4 Realtime</li>
-      </ol>
-    </div>
-
-    <p style="margin-top: 12px; color: #d32f2f;"><strong>⚠️ Watch the console for dataLayer events!</strong></p>
-    <p style="margin: 8px 0;">Every dataLayer push will be logged with "📦 dataLayer event:"</p>
+  <!-- Info Panel -->
+  <div style="margin-top: 40px; padding: 20px; background: #f0f7ff; border-left: 4px solid #2196F3; font-family: system-ui, sans-serif;">
+    <h3 style="margin-top: 0; color: #1565C0;">✅ Integration Active</h3>
+    <p><strong>Tracking:</strong></p>
+    <ul style="line-height: 1.8;">
+      <li><code>checkout_opened</code> - When modal opens</li>
+      <li><code>donation_completed</code> - When donation completes (with amount)</li>
+      <li><code>purchase</code> - GA4 e-commerce event (for revenue tracking)</li>
+    </ul>
+    <p style="margin-bottom: 0;"><strong>Method:</strong> dataLayer event interception</p>
   </div>
 </body>
 </html>
