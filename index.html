@@ -53,7 +53,7 @@
   <a href="#XJKDHSTQ" id="donate-button"></a>
 
   <script>
-    console.log("🔧 Initializing tracking...");
+    console.log("🔧 Initializing dataLayer event tracking...");
     
     // Send test event
     gtag('event', 'page_ready', {
@@ -62,157 +62,64 @@
     });
     console.log("✅ Test event 'page_ready' sent to GA4");
 
-    var checkoutTracked = false;
-    var donationTracked = false;
-
-    function sendCheckoutEvent(source) {
-      if (checkoutTracked) {
-        console.log("⚠️ Checkout already tracked, skipping duplicate");
-        return;
-      }
-      
-      checkoutTracked = true;
-      console.log("🚀 SENDING checkout_opened from:", source);
-      
-      gtag('event', 'checkout_opened', {
-        event_category: 'fundraiseup',
-        event_label: source,
-        non_interaction: false
-      });
-      
-      console.log("✅ checkout_opened sent to GA4");
-      
-      setTimeout(function() {
-        checkoutTracked = false;
-      }, 2000);
-    }
-
-    function sendDonationEvent(data) {
-      if (donationTracked) {
-        console.log("⚠️ Donation already tracked, skipping duplicate");
-        return;
-      }
-      
-      donationTracked = true;
-      console.log("🎉 SENDING donation_completed, data:", data);
-      
-      gtag('event', 'donation_completed', {
-        event_category: 'fundraiseup',
-        event_label: 'test_donation',
-        value: data && data.amount ? data.amount : 0,
-        currency: data && data.currency ? data.currency : 'USD'
-      });
-      
-      console.log("✅ donation_completed sent to GA4");
-    }
-
-    // METHOD 1: Use FundraiseUp API (primary method)
-    console.log("🔍 Checking FundraiseUp object:", typeof FundraiseUp, FundraiseUp);
+    // SOLUTION: Listen for FundraiseUp events pushed to dataLayer
+    // Save the original push function
+    var originalPush = window.dataLayer.push;
     
-    if (typeof FundraiseUp !== 'undefined') {
-      // Test if the API is actually functional
-      console.log("🧪 Testing FundraiseUp API methods:");
-      console.log("   - FundraiseUp.on exists?", typeof FundraiseUp.on === 'function');
+    // Override dataLayer.push to intercept FundraiseUp events
+    window.dataLayer.push = function() {
+      // Call the original push
+      var result = originalPush.apply(window.dataLayer, arguments);
       
-      FundraiseUp.on('checkout_open', function(data) {
-        console.log("🎉🎉🎉 FundraiseUp API: checkout_open FIRED! 🎉🎉🎉");
-        console.log("   Data:", data);
-        sendCheckoutEvent('fundraiseup_api');
-      });
-
-      FundraiseUp.on('donation_complete', function(data) {
-        console.log("🎉🎉🎉 FundraiseUp API: donation_complete FIRED! 🎉🎉🎉");
-        console.log("   Data:", data);
-        sendDonationEvent(data);
-      });
+      // Check what was pushed
+      var data = arguments[0];
       
-      // Also try these alternative event names
-      FundraiseUp.on('checkout_opened', function(data) {
-        console.log("🎉 Alternative event: checkout_opened fired");
-        sendCheckoutEvent('fundraiseup_api_alt');
-      });
-      
-      FundraiseUp.on('open', function(data) {
-        console.log("🎉 Alternative event: open fired");
-        sendCheckoutEvent('fundraiseup_open');
-      });
-
-      console.log("✅ FundraiseUp API event handlers registered");
-      console.log("   Registered events: checkout_open, donation_complete, checkout_opened, open");
-    } else {
-      console.error("❌ FundraiseUp object not found!");
-    }
-
-    // METHOD 2: Watch for FundraiseUp widget button to appear and track clicks
-    var observer = new MutationObserver(function(mutations) {
-      // Look for FundraiseUp buttons in the page
-      var fundraiseButtons = document.querySelectorAll('[data-fundraiseup-id], [href*="XJKDHSTQ"], button[class*="fundraise"], a[class*="fundraise"]');
-      
-      fundraiseButtons.forEach(function(btn) {
-        if (btn.dataset.tracked) return; // Already tracking this button
+      if (data && typeof data === 'object') {
+        console.log("📦 dataLayer event:", data.event, data);
         
-        btn.dataset.tracked = 'true';
-        console.log("🔍 Found FundraiseUp button, attaching listeners:", btn);
-        
-        ['mousedown', 'click'].forEach(function(eventType) {
-          btn.addEventListener(eventType, function(e) {
-            console.log("🖱️ FundraiseUp button " + eventType.toUpperCase());
-            sendCheckoutEvent('widget_button_' + eventType);
-          }, true);
-        });
-      });
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true
-    });
-    console.log("✅ DOM mutation observer started - watching for FundraiseUp buttons");
-
-    // METHOD 3: Fallback - track ALL clicks and check if they're opening the modal
-    var modalCheckInterval;
-    var clickCount = 0;
-    document.addEventListener('click', function(e) {
-      clickCount++;
-      console.log("🖱️ CLICK #" + clickCount + " detected on:", e.target.tagName, e.target.className, e.target.id);
-      console.log("   Full element:", e.target);
-      
-      // After any click, check if a modal appeared
-      clearTimeout(modalCheckInterval);
-      modalCheckInterval = setTimeout(function() {
-        var modals = document.querySelectorAll('[class*="modal"], [class*="overlay"], [role="dialog"], iframe[src*="fundraiseup"]');
-        console.log("   Checking for modals... found:", modals.length);
-        if (modals.length > 0) {
-          console.log("👁️ Modal detected after click!");
-          sendCheckoutEvent('modal_detected');
+        // Listen for checkoutOpen event
+        if (data.event === 'checkoutOpen') {
+          console.log("🎉🎉🎉 CHECKOUT OPENED via dataLayer! 🎉🎉🎉");
+          console.log("   Event data:", data);
+          
+          gtag('event', 'checkout_opened', {
+            event_category: 'fundraiseup',
+            event_label: 'checkout_modal_opened',
+            non_interaction: false
+          });
+          
+          console.log("✅ checkout_opened sent to GA4");
         }
-      }, 100);
-    }, true);
-    console.log("✅ Global click listener with modal detection active - will log EVERY click");
-
-    // METHOD 4: Monitor for iframe (FundraiseUp checkout opens in iframe)
-    var iframeCheckCount = 0;
-    var lastIframeCount = 0;
+        
+        // Listen for donationComplete event
+        if (data.event === 'donationComplete') {
+          console.log("🎉🎉🎉 DONATION COMPLETED via dataLayer! 🎉🎉🎉");
+          console.log("   Event data:", data);
+          
+          var amount = data.amount || (data.ecommerce && data.ecommerce.purchase && data.ecommerce.purchase.actionField && data.ecommerce.purchase.actionField.revenue) || 0;
+          var currency = data.currency || 'USD';
+          
+          gtag('event', 'donation_completed', {
+            event_category: 'fundraiseup',
+            event_label: 'test_donation',
+            value: amount,
+            currency: currency
+          });
+          
+          console.log("✅ donation_completed sent to GA4 (amount: " + amount + " " + currency + ")");
+        }
+        
+        // Listen for checkoutClose event (optional, for debugging)
+        if (data.event === 'checkoutClose') {
+          console.log("ℹ️ Checkout closed via dataLayer");
+        }
+      }
+      
+      return result;
+    };
     
-    setInterval(function() {
-      iframeCheckCount++;
-      var iframes = document.querySelectorAll('iframe');
-      var currentCount = iframes.length;
-      
-      if (iframeCheckCount % 10 === 0) {
-        console.log("🔍 Iframe check #" + iframeCheckCount + " - Total iframes:", currentCount);
-      }
-      
-      // Only trigger if iframe count INCREASED (modal opened)
-      if (currentCount > lastIframeCount && currentCount >= 3) {
-        console.log("🎯 IFRAME COUNT INCREASED from " + lastIframeCount + " to " + currentCount);
-        sendCheckoutEvent('iframe_detected');
-      }
-      
-      lastIframeCount = currentCount;
-    }, 500);
-    console.log("✅ Iframe monitoring started - tracking iframe count changes");
+    console.log("✅ dataLayer event listener installed");
+    console.log("   Watching for: checkoutOpen, donationComplete, checkoutClose");
   </script>
 
   <!-- Debug panel -->
@@ -223,19 +130,22 @@
     <p><strong>Form ID:</strong> XJKDHSTQ</p>
     
     <div style="background: white; padding: 12px; border-radius: 4px; margin-top: 12px;">
-      <p style="margin: 0 0 8px 0; font-weight: bold; color: #d32f2f;">🔍 Discovery: Your button is being removed!</p>
-      <p style="margin: 8px 0;">FundraiseUp replaces <code>&lt;a href="#XJKDHSTQ"&gt;</code> with their own widget button. We're now tracking their button instead.</p>
+      <p style="margin: 0 0 8px 0; font-weight: bold; color: #4caf50;">✅ Solution: dataLayer Event Listening</p>
+      <p style="margin: 8px 0;">FundraiseUp pushes events to the dataLayer. We're now intercepting those events and forwarding them to GA4.</p>
       
       <p style="margin: 12px 0 8px 0; font-weight: bold;">Expected behavior:</p>
       <ol style="margin: 0; padding-left: 20px; line-height: 1.6;">
-        <li>Widget button appears (green)</li>
-        <li>Click it → should log button click + modal/iframe detection</li>
-        <li>checkout_opened event fires to GA4</li>
-        <li>Complete donation → donation_completed fires to GA4</li>
+        <li>Click donate button</li>
+        <li>See "🎉 CHECKOUT OPENED via dataLayer!" in console</li>
+        <li>See checkout_opened in GA4 Realtime</li>
+        <li>Complete donation</li>
+        <li>See "🎉 DONATION COMPLETED via dataLayer!" in console</li>
+        <li>See donation_completed in GA4 Realtime</li>
       </ol>
     </div>
 
-    <p style="margin-top: 12px; color: #d32f2f;"><strong>⚠️ Watch the console when you click the donate button!</strong></p>
+    <p style="margin-top: 12px; color: #d32f2f;"><strong>⚠️ Watch the console for dataLayer events!</strong></p>
+    <p style="margin: 8px 0;">Every dataLayer push will be logged with "📦 dataLayer event:"</p>
   </div>
 </body>
 </html>
