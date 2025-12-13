@@ -49,12 +49,21 @@
 <body>
   <h1>Helping Hand — Fundraise Up GA4 Demo</h1>
   
-  <!-- Custom Donate Button -->
-  <a href="#XJKDHSTQ" id="donate-button" style="display: inline-block; padding: 12px 24px; background: #2196F3; color: white; text-decoration: none; border-radius: 4px; font-weight: bold;">Donate Now</a>
+  <!-- Custom Donate Button - FundraiseUp will replace this -->
+  <a href="#XJKDHSTQ" id="donate-button"></a>
 
   <script>
-    // Track ALL checkout events - both from button clicks AND FundraiseUp API
-    var checkoutTracked = false; // Prevent duplicate tracking
+    console.log("🔧 Initializing tracking...");
+    
+    // Send test event
+    gtag('event', 'page_ready', {
+      event_category: 'test',
+      event_label: 'tracking_initialized'
+    });
+    console.log("✅ Test event 'page_ready' sent to GA4");
+
+    var checkoutTracked = false;
+    var donationTracked = false;
 
     function sendCheckoutEvent(source) {
       if (checkoutTracked) {
@@ -65,7 +74,6 @@
       checkoutTracked = true;
       console.log("🚀 SENDING checkout_opened from:", source);
       
-      // Send to GA4
       gtag('event', 'checkout_opened', {
         event_category: 'fundraiseup',
         event_label: source,
@@ -74,13 +82,18 @@
       
       console.log("✅ checkout_opened sent to GA4");
       
-      // Reset after 2 seconds (in case user closes and reopens)
       setTimeout(function() {
         checkoutTracked = false;
       }, 2000);
     }
 
     function sendDonationEvent(data) {
+      if (donationTracked) {
+        console.log("⚠️ Donation already tracked, skipping duplicate");
+        return;
+      }
+      
+      donationTracked = true;
       console.log("🎉 SENDING donation_completed, data:", data);
       
       gtag('event', 'donation_completed', {
@@ -93,128 +106,74 @@
       console.log("✅ donation_completed sent to GA4");
     }
 
-    // Wait for DOM to be ready
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initTracking);
-    } else {
-      initTracking();
+    // METHOD 1: Use FundraiseUp API (primary method)
+    if (typeof FundraiseUp !== 'undefined') {
+      FundraiseUp.on('checkout_open', function(data) {
+        console.log("📢 FundraiseUp API: checkout_open fired", data);
+        sendCheckoutEvent('fundraiseup_api');
+      });
+
+      FundraiseUp.on('donation_complete', function(data) {
+        console.log("📢 FundraiseUp API: donation_complete fired", data);
+        sendDonationEvent(data);
+      });
+
+      console.log("✅ FundraiseUp API event handlers registered");
     }
 
-    function initTracking() {
-      console.log("🔧 Initializing tracking...");
-
-      // Test event to verify GA4 is receiving custom events
-      gtag('event', 'page_ready', {
-        event_category: 'test',
-        event_label: 'tracking_initialized'
-      });
-      console.log("✅ Test event 'page_ready' sent to GA4");
-
-      // METHOD 1: Track direct button clicks using MOUSEDOWN (fires before click is stopped)
-      var donateBtn = document.getElementById('donate-button');
-      if (donateBtn) {
-        // Try EVERY mouse event
-        ['mousedown', 'mouseup', 'click', 'mouseover', 'mouseenter'].forEach(function(eventType) {
-          donateBtn.addEventListener(eventType, function(e) {
-            console.log("🖱️ Blue button " + eventType.toUpperCase() + " detected");
-            if (eventType === 'mousedown' || eventType === 'click') {
-              sendCheckoutEvent('blue_button_' + eventType);
-            }
+    // METHOD 2: Watch for FundraiseUp widget button to appear and track clicks
+    var observer = new MutationObserver(function(mutations) {
+      // Look for FundraiseUp buttons in the page
+      var fundraiseButtons = document.querySelectorAll('[data-fundraiseup-id], [href*="XJKDHSTQ"], button[class*="fundraise"], a[class*="fundraise"]');
+      
+      fundraiseButtons.forEach(function(btn) {
+        if (btn.dataset.tracked) return; // Already tracking this button
+        
+        btn.dataset.tracked = 'true';
+        console.log("🔍 Found FundraiseUp button, attaching listeners:", btn);
+        
+        ['mousedown', 'click'].forEach(function(eventType) {
+          btn.addEventListener(eventType, function(e) {
+            console.log("🖱️ FundraiseUp button " + eventType.toUpperCase());
+            sendCheckoutEvent('widget_button_' + eventType);
           }, true);
         });
-        
-        console.log("✅ All mouse event listeners attached to blue donate button");
-        
-        // Additional diagnostic: log button properties
-        console.log("📊 Button element:", donateBtn);
-        console.log("📊 Button visible?", donateBtn.offsetParent !== null);
-        console.log("📊 Button dimensions:", donateBtn.getBoundingClientRect());
-        
-        // Test: manually trigger a test to confirm button is interactive
-        setTimeout(function() {
-          console.log("🧪 Testing if button is still accessible after 2 seconds...");
-          console.log("🧪 Button still exists?", document.getElementById('donate-button') !== null);
-          console.log("🧪 Button z-index:", window.getComputedStyle(donateBtn).zIndex);
-          console.log("🧪 Button pointer-events:", window.getComputedStyle(donateBtn).pointerEvents);
-        }, 2000);
-      } else {
-        console.error("❌ Blue button not found!");
-      }
+      });
+    });
 
-      // METHOD 2: Track ANY link with href="#XJKDHSTQ" using MOUSEDOWN
-      document.addEventListener('mousedown', function(e) {
-        var target = e.target;
-        // Check if clicked element or any parent is a link to #XJKDHSTQ
-        while (target && target !== document) {
-          if (target.tagName === 'A' && target.getAttribute('href') === '#XJKDHSTQ') {
-            console.log("🖱️ #XJKDHSTQ link MOUSEDOWN detected");
-            sendCheckoutEvent('fundraiseup_link_mousedown');
-            break;
-          }
-          target = target.parentElement;
-        }
-      }, true);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true
+    });
+    console.log("✅ DOM mutation observer started - watching for FundraiseUp buttons");
+
+    // METHOD 3: Fallback - track ALL clicks and check if they're opening the modal
+    var modalCheckInterval;
+    document.addEventListener('click', function(e) {
+      console.log("🖱️ Global click on:", e.target.tagName, e.target.className);
       
-      document.addEventListener('click', function(e) {
-        console.log("🖱️ GLOBAL CLICK detected on:", e.target);
-        console.log("   Tag:", e.target.tagName, "| Href:", e.target.href);
-        
-        var target = e.target;
-        // Check if clicked element or any parent is a link to #XJKDHSTQ
-        while (target && target !== document) {
-          if (target.tagName === 'A' && target.getAttribute('href') === '#XJKDHSTQ') {
-            console.log("✅ Found #XJKDHSTQ link in click path!");
-            sendCheckoutEvent('fundraiseup_link_click');
-            break;
-          }
-          target = target.parentElement;
+      // After any click, check if a modal appeared
+      clearTimeout(modalCheckInterval);
+      modalCheckInterval = setTimeout(function() {
+        var modals = document.querySelectorAll('[class*="modal"], [class*="overlay"], [role="dialog"], iframe[src*="fundraiseup"]');
+        if (modals.length > 0) {
+          console.log("👁️ Modal detected after click!");
+          sendCheckoutEvent('modal_detected');
         }
-      }, true); // Use capture phase
-      console.log("✅ Global click + mousedown listeners attached for all #XJKDHSTQ links");
+      }, 100);
+    }, true);
+    console.log("✅ Global click listener with modal detection active");
 
-      // METHOD 3: Use FundraiseUp API events (if they fire)
-      if (typeof FundraiseUp !== 'undefined') {
-        
-        // Track checkout open via API
-        FundraiseUp.on('checkout_open', function(data) {
-          console.log("📢 FundraiseUp API: checkout_open fired", data);
-          sendCheckoutEvent('fundraiseup_api');
-        });
-
-        // Track donation complete
-        FundraiseUp.on('donation_complete', function(data) {
-          console.log("📢 FundraiseUp API: donation_complete fired", data);
-          sendDonationEvent(data);
-        });
-
-        console.log("✅ FundraiseUp API event handlers registered");
+    // METHOD 4: Monitor for iframe (FundraiseUp checkout opens in iframe)
+    setInterval(function() {
+      var iframes = document.querySelectorAll('iframe[src*="fundraiseup"]');
+      if (iframes.length > 0 && !checkoutTracked) {
+        console.log("🎯 FundraiseUp iframe detected!");
+        sendCheckoutEvent('iframe_detected');
       }
-
-      // METHOD 4: Watch for modal appearing in DOM (nuclear option)
-      var observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-          mutation.addedNodes.forEach(function(node) {
-            if (node.nodeType === 1) {
-              // Check if this looks like a FundraiseUp modal
-              if (node.classList && (
-                  node.classList.contains('fu-modal') || 
-                  node.classList.contains('fundraiseup-modal') ||
-                  (node.id && node.id.includes('fundraise'))
-                )) {
-                console.log("👁️ Modal detected in DOM:", node);
-                sendCheckoutEvent('dom_mutation_observer');
-              }
-            }
-          });
-        });
-      });
-
-      observer.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-      console.log("✅ DOM mutation observer started");
-    }
+    }, 500);
+    console.log("✅ Iframe monitoring started");
   </script>
 
   <!-- Debug panel -->
@@ -225,30 +184,19 @@
     <p><strong>Form ID:</strong> XJKDHSTQ</p>
     
     <div style="background: white; padding: 12px; border-radius: 4px; margin-top: 12px;">
-      <p style="margin: 0 0 8px 0; font-weight: bold;">Expected Console Logs:</p>
+      <p style="margin: 0 0 8px 0; font-weight: bold; color: #d32f2f;">🔍 Discovery: Your button is being removed!</p>
+      <p style="margin: 8px 0;">FundraiseUp replaces <code>&lt;a href="#XJKDHSTQ"&gt;</code> with their own widget button. We're now tracking their button instead.</p>
+      
+      <p style="margin: 12px 0 8px 0; font-weight: bold;">Expected behavior:</p>
       <ol style="margin: 0; padding-left: 20px; line-height: 1.6;">
-        <li>✅ GA4 initialized</li>
-        <li>🔧 Initializing tracking...</li>
-        <li>✅ Test event 'page_ready' sent</li>
-        <li>✅ Click listeners attached</li>
-        <li><strong style="color: #2196F3;">When you click donate:</strong>
-          <ul style="margin: 4px 0;">
-            <li>🖱️ Button clicked</li>
-            <li>🚀 SENDING checkout_opened</li>
-            <li>✅ checkout_opened sent to GA4</li>
-          </ul>
-        </li>
-        <li><strong style="color: #4caf50;">After completing donation:</strong>
-          <ul style="margin: 4px 0;">
-            <li>🎉 SENDING donation_completed</li>
-            <li>✅ donation_completed sent to GA4</li>
-          </ul>
-        </li>
+        <li>Widget button appears (green)</li>
+        <li>Click it → should log button click + modal/iframe detection</li>
+        <li>checkout_opened event fires to GA4</li>
+        <li>Complete donation → donation_completed fires to GA4</li>
       </ol>
     </div>
 
-    <p style="margin-top: 12px; color: #d32f2f;"><strong>⚠️ IMPORTANT: Check browser console for logs!</strong></p>
-    <p style="margin: 8px 0;">Open GA4 <strong>Realtime → Events</strong> within 30 seconds to see events appear.</p>
+    <p style="margin-top: 12px; color: #d32f2f;"><strong>⚠️ Watch the console when you click the donate button!</strong></p>
   </div>
 </body>
 </html>
