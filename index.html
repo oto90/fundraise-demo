@@ -16,6 +16,8 @@
     gtag("config", "G-T9JS51CFMT", {
       debug_mode: true
     });
+    
+    console.log("✅ GA4 initialized with debug mode");
   </script>
 
   <!-- Enable Test Mode -->
@@ -55,155 +57,204 @@
   <a href="#XJKDHSTQ" id="donate-button" style="display: inline-block; background: #2196F3; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0;">Donate Now</a>
 
   <script>
-    console.log("🔧 Starting FundraiseUp + GA4 Integration (Debug Mode)");
-    
-    // Test event to verify GA4 is working
-    gtag('event', 'page_ready', {
-      event_category: 'test'
-    });
+    console.log("🔧 Starting FundraiseUp + GA4 Integration");
 
     // Use FundraiseUp.on() API method for proper event tracking
     FundraiseUp.on('checkoutOpen', function(details) {
+      console.log("═══════════════════════════════════════");
       console.log("🎉 CHECKOUT OPENED");
-      console.log("   Full details:", details);
+      console.log("═══════════════════════════════════════");
+      console.log("Full details:", details);
       
-      var eventData = {
-        event_category: 'fundraiseup',
-        event_label: details.campaign ? details.campaign.name : 'checkout_opened'
-      };
+      gtag('event', 'begin_checkout', {
+        currency: 'USD',
+        value: 0
+      });
       
-      gtag('event', 'begin_checkout', eventData);
-      console.log("✅ begin_checkout sent to GA4:", eventData);
+      console.log("✅ begin_checkout sent to GA4");
+      console.log("");
     });
     
     FundraiseUp.on('donationComplete', function(details) {
+      console.log("═══════════════════════════════════════");
       console.log("🎉 DONATION COMPLETED");
-      console.log("   Full details:", details);
+      console.log("═══════════════════════════════════════");
+      console.log("Full details:", details);
       
       // Extract donation data
       var donation = details.donation || {};
       var campaign = details.campaign || {};
-      var supporter = details.supporter || {};
       
-      var amount = donation.amount || 0;
+      var amount = Number(donation.amount) || 0;
       var currency = donation.currency || 'USD';
-      var transactionId = donation.id || '';
-      var campaignId = campaign.id || '';
-      var campaignName = campaign.name || 'Donation';
+      var transactionId = donation.id || 'T' + Date.now();
+      var campaignId = campaign.id || 'GENERAL';
+      var campaignName = campaign.name || 'General Donation';
       
-      console.log("   Amount:", amount, currency);
-      console.log("   Transaction ID:", transactionId);
-      console.log("   Campaign:", campaignName);
-      
-      // Send GA4 purchase event with proper e-commerce structure
-      var purchaseData = {
-        transaction_id: transactionId,
-        value: amount,
-        currency: currency,
-        items: [{
-          item_id: campaignId,
-          item_name: campaignName,
-          item_category: 'Donation',
-          price: amount,
-          quantity: 1
-        }]
-      };
-      
-      gtag('event', 'purchase', purchaseData);
-      
-      console.log("✅ purchase event sent to GA4 with e-commerce data:");
-      console.log("   Transaction ID:", transactionId);
-      console.log("   Value:", amount);
+      console.log("───────────────────────────────────────");
+      console.log("📊 Extracted Data:");
+      console.log("   Amount:", amount);
       console.log("   Currency:", currency);
-      console.log("   Full purchase data:", JSON.stringify(purchaseData, null, 2));
+      console.log("   Transaction ID:", transactionId);
+      console.log("   Campaign ID:", campaignId);
+      console.log("   Campaign Name:", campaignName);
+      console.log("───────────────────────────────────────");
       
-      // Also send custom donation_completed event for additional tracking
-      var customEventData = {
-        event_category: 'fundraiseup',
-        event_label: campaignName,
-        value: amount,
+      // Create items array with REQUIRED fields per GA4 spec
+      // Each item MUST have item_id or item_name (we include both)
+      var items = [{
+        item_id: campaignId,
+        item_name: campaignName,
+        item_category: "Donation",
+        price: amount,
+        quantity: 1
+      }];
+      
+      // Send GA4 purchase event - EXACTLY as per GA4 documentation
+      var purchaseEventData = {
         currency: currency,
         transaction_id: transactionId,
-        payment_method: donation.paymentMethod || 'unknown',
-        is_recurring: donation.recurring || false
+        value: amount,
+        items: items
       };
       
-      gtag('event', 'donation_completed', customEventData);
+      console.log("📦 Sending purchase event to GA4:");
+      console.log(JSON.stringify(purchaseEventData, null, 2));
       
-      console.log("✅ donation_completed event sent:", customEventData);
+      gtag('event', 'purchase', purchaseEventData);
       
-      // Log dataLayer to verify
-      console.log("📊 Current dataLayer:", window.dataLayer);
+      console.log("✅ purchase event sent to GA4");
+      console.log("");
+      
+      // Wait a moment then verify it's in dataLayer
+      setTimeout(function() {
+        console.log("🔍 Verifying dataLayer contents:");
+        var purchaseEvents = window.dataLayer.filter(function(item) {
+          return item[0] === 'event' && item[1] === 'purchase';
+        });
+        console.log("Found", purchaseEvents.length, "purchase events in dataLayer");
+        console.log("Last 5 dataLayer entries:", window.dataLayer.slice(-5));
+        console.log("═══════════════════════════════════════");
+      }, 500);
     });
     
     console.log("✅ FundraiseUp event listeners initialized");
-    console.log("🐛 Debug mode enabled - check GA4 DebugView");
+    console.log("🐛 Debug mode enabled - check GA4 DebugView at:");
+    console.log("   Admin > DebugView in your GA4 property");
+    console.log("");
   </script>
 
   <!-- Info Panel -->
   <div style="margin-top: 40px; padding: 20px; background: #f0f7ff; border-left: 4px solid #2196F3;">
-    <h3 style="margin-top: 0; color: #1565C0;">✅ Integration Active (Debug Mode)</h3>
-    <p><strong>Tracking:</strong></p>
+    <h3 style="margin-top: 0; color: #1565C0;">✅ Integration Active</h3>
+    <p><strong>Measurement ID:</strong> G-T9JS51CFMT</p>
+    <p><strong>Debug Mode:</strong> Enabled</p>
+    <p><strong>Events Being Tracked:</strong></p>
     <ul style="line-height: 1.8;">
-      <li><code>begin_checkout</code> - When checkout modal opens (GA4 standard event)</li>
-      <li><code>purchase</code> - GA4 e-commerce event with full transaction details (amount, currency, items)</li>
-      <li><code>donation_completed</code> - Custom event with additional donation metadata</li>
+      <li><code>begin_checkout</code> - When checkout modal opens</li>
+      <li><code>purchase</code> - Complete transaction with amount, currency, and items array</li>
     </ul>
-    <p><strong>Method:</strong> FundraiseUp.on() JavaScript API</p>
-    <p style="margin-bottom: 0; color: #666; font-size: 14px;">
-      <strong>Debug mode enabled:</strong> Events will appear in GA4 DebugView immediately.
-    </p>
+    <p style="margin-bottom: 0;"><strong>Method:</strong> FundraiseUp.on() JavaScript API with GA4-compliant data structure</p>
   </div>
 
   <!-- Testing Instructions -->
   <div style="margin-top: 20px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107;">
-    <h3 style="margin-top: 0; color: #856404;">📋 How to Verify Revenue is Tracked</h3>
+    <h3 style="margin-top: 0; color: #856404;">📋 VERIFICATION STEPS</h3>
     
-    <h4 style="color: #856404;">Method 1: GA4 DebugView (Immediate - BEST FOR TESTING)</h4>
-    <ol style="line-height: 1.8;">
-      <li>In GA4, go to <strong>Admin</strong> (gear icon) → <strong>DebugView</strong></li>
-      <li>Make a test donation of $700</li>
-      <li>You'll see the <code>purchase</code> event appear in DebugView</li>
-      <li>Click on the <code>purchase</code> event</li>
-      <li>You should see parameters including:
-        <ul>
-          <li><code>value: 700</code></li>
-          <li><code>currency: USD</code></li>
-          <li><code>transaction_id: XXXXXXXX</code></li>
-          <li><code>items: [...]</code> with item details</li>
-        </ul>
-      </li>
-    </ol>
+    <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 5px;">
+      <h4 style="margin-top: 0; color: #856404;">STEP 1: Check Browser Console</h4>
+      <ol style="line-height: 1.8; margin-bottom: 0;">
+        <li>Open Developer Tools (F12)</li>
+        <li>Go to Console tab</li>
+        <li>Make a $700 donation</li>
+        <li>Look for the boxed output showing extracted data</li>
+        <li>Verify "Amount: 700" is displayed</li>
+      </ol>
+    </div>
 
-    <h4 style="color: #856404;">Method 2: Realtime Report</h4>
-    <ol style="line-height: 1.8;">
-      <li>Go to <strong>Reports</strong> → <strong>Realtime</strong></li>
-      <li>Look for the <strong>Event count by Event name</strong> card</li>
-      <li>Click on the <code>purchase</code> event</li>
-      <li>You should see event parameters (but revenue might not show immediately)</li>
-    </ol>
+    <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 5px;">
+      <h4 style="margin-top: 0; color: #856404;">STEP 2: Check GA4 DebugView (REAL-TIME)</h4>
+      <ol style="line-height: 1.8; margin-bottom: 0;">
+        <li>Open GA4 → <strong>Admin</strong> → <strong>DebugView</strong></li>
+        <li>Make a $700 donation</li>
+        <li>Watch for <code>purchase</code> event to appear</li>
+        <li>Click on the <code>purchase</code> event</li>
+        <li>Verify these parameters show:
+          <ul>
+            <li><code>value: 700</code></li>
+            <li><code>currency: USD</code></li>
+            <li><code>transaction_id: DXXXXXXX</code></li>
+            <li><code>items: Array(1)</code></li>
+          </ul>
+        </li>
+        <li>Expand <code>items</code> and verify:
+          <ul>
+            <li><code>item_id</code> is present</li>
+            <li><code>item_name</code> is present</li>
+            <li><code>price: 700</code></li>
+          </ul>
+        </li>
+      </ol>
+    </div>
 
-    <h4 style="color: #856404;">Method 3: E-commerce Reports (24-48 hours delay)</h4>
-    <p>Full e-commerce reports with revenue appear after 24-48 hours in:</p>
-    <ul>
-      <li><strong>Reports</strong> → <strong>Monetization</strong> → <strong>Ecommerce purchases</strong></li>
-    </ul>
+    <div style="background: white; padding: 15px; margin: 15px 0; border-radius: 5px;">
+      <h4 style="margin-top: 0; color: #856404;">STEP 3: Check GA4 Realtime Report</h4>
+      <ol style="line-height: 1.8; margin-bottom: 0;">
+        <li>Go to <strong>Reports</strong> → <strong>Realtime</strong></li>
+        <li>Scroll to "Event count by Event name"</li>
+        <li>Click on <code>purchase</code> event</li>
+        <li>Look for parameter details</li>
+      </ol>
+    </div>
 
-    <h4 style="color: #856404;">Test Card Details</h4>
-    <ul>
-      <li>Card number: <code>4242 4242 4242 4242</code></li>
-      <li>Expiry: Any future date (e.g., 12/25)</li>
-      <li>CVC: Any 3 digits (e.g., 123)</li>
-    </ul>
+    <div style="background: #e8f5e9; padding: 15px; margin: 15px 0; border-radius: 5px; border-left: 3px solid #4caf50;">
+      <h4 style="margin-top: 0; color: #2e7d32;">💡 Important Notes</h4>
+      <ul style="line-height: 1.8; margin-bottom: 0;">
+        <li><strong>DebugView</strong> shows data IMMEDIATELY - this is your best testing tool</li>
+        <li><strong>E-commerce reports</strong> take 24-48 hours to populate</li>
+        <li><strong>Test card:</strong> 4242 4242 4242 4242, any future expiry, any CVC</li>
+        <li>If DebugView shows the correct data, your implementation is working!</li>
+      </ul>
+    </div>
   </div>
 
-  <!-- DataLayer Inspector -->
-  <div style="margin-top: 20px; padding: 20px; background: #e8f5e9; border-left: 4px solid #4caf50;">
-    <h3 style="margin-top: 0; color: #2e7d32;">🔍 DataLayer Inspector</h3>
-    <p>Open browser console after making a donation to see the full dataLayer content logged.</p>
-    <button onclick="console.log('Current dataLayer:', window.dataLayer)" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 3px; cursor: pointer;">
-      Log DataLayer to Console
+  <!-- Quick Test Button -->
+  <div style="margin-top: 20px; padding: 20px; background: #f3e5f5; border-left: 4px solid #9c27b0;">
+    <h3 style="margin-top: 0; color: #6a1b9a;">🧪 Test Purchase Event (Fake Data)</h3>
+    <p>Click this button to send a test $700 purchase event without making a real donation:</p>
+    <button onclick="testPurchaseEvent()" style="background: #9c27b0; color: white; border: none; padding: 12px 24px; border-radius: 3px; cursor: pointer; font-size: 16px; font-weight: bold;">
+      Send Test $700 Purchase Event
     </button>
+    <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;">This will help you verify GA4 is receiving the data correctly before making a real donation.</p>
   </div>
+
+  <script>
+    function testPurchaseEvent() {
+      console.log("═══════════════════════════════════════");
+      console.log("🧪 SENDING TEST PURCHASE EVENT");
+      console.log("═══════════════════════════════════════");
+      
+      var testData = {
+        currency: "USD",
+        transaction_id: "TEST_" + Date.now(),
+        value: 700,
+        items: [{
+          item_id: "TEST_CAMPAIGN",
+          item_name: "Test Donation Campaign",
+          item_category: "Donation",
+          price: 700,
+          quantity: 1
+        }]
+      };
+      
+      console.log("Test purchase data:", JSON.stringify(testData, null, 2));
+      gtag('event', 'purchase', testData);
+      console.log("✅ Test purchase event sent!");
+      console.log("Check GA4 DebugView now - you should see this event appear immediately");
+      console.log("═══════════════════════════════════════");
+      
+      alert("Test purchase event sent! Check:\n\n1. Browser console for confirmation\n2. GA4 DebugView for the event\n3. Look for 'purchase' event with value: 700");
+    }
+  </script>
 </body>
 </html>
