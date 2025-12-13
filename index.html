@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FundraiseUp + GA4 Test</title>
 
-  <!-- Google Analytics 4 -->
+  <!-- GA4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-T9JS51CFMT"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -46,45 +46,48 @@
 </head>
 
 <body>
-  <h1>FundraiseUp + GA4 Integration Test</h1>
+  <h1>FundraiseUp + GA4 Integration</h1>
 
-  <!-- FundraiseUp Donate Button -->
+  <!-- Donate Button -->
   <a href="#XJKDHSTQ">Donate</a>
 
   <script>
-    // Checkout opened event
-    FundraiseUp.on('checkout.open', function () {
-      gtag('event', 'checkout_opened', {
-        event_category: 'fundraiseup'
-      });
-    });
+    // IMPORTANT: wait until FundraiseUp is fully ready
+    FundraiseUp.then(function () {
 
-    // Donation completed event
-    FundraiseUp.on('donation.complete', function (donation) {
-
-      // Convert cents to dollars
-      var amount = donation.amount / 100;
-      var currency = donation.currency || 'USD';
-
-      // Custom confirmation event
-      gtag('event', 'donation_completed', {
-        value: amount,
-        currency: currency
+      // Checkout opened
+      FundraiseUp.on('checkout.open', function () {
+        gtag('event', 'checkout_opened', {
+          event_category: 'fundraiseup'
+        });
       });
 
-      // GA4 ecommerce purchase event
-      gtag('event', 'purchase', {
-        transaction_id: donation.id,
-        value: amount,
-        currency: currency,
-        items: [{
-          item_id: donation.campaign.id,
-          item_name: donation.campaign.name,
-          item_category: 'Donation',
-          price: amount,
-          quantity: 1
-        }]
+      // Donation completed
+      FundraiseUp.on('donation.complete', function (donation) {
+        var amount = donation.amount / 100;
+        var currency = donation.currency || 'USD';
+
+        // Custom event
+        gtag('event', 'donation_completed', {
+          value: amount,
+          currency: currency
+        });
+
+        // GA4 ecommerce event
+        gtag('event', 'purchase', {
+          transaction_id: donation.id,
+          value: amount,
+          currency: currency,
+          items: [{
+            item_id: donation.campaign.id,
+            item_name: donation.campaign.name,
+            item_category: 'Donation',
+            price: amount,
+            quantity: 1
+          }]
+        });
       });
+
     });
   </script>
 </body>
