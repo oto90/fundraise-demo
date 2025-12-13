@@ -1,160 +1,91 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Helping Hand — Fundraise Up GA4 Demo</title>
-  
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FundraiseUp + GA4 Test</title>
+
   <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-T9JS51CFMT"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){ dataLayer.push(arguments); }
-    gtag("js", new Date());
-    gtag("config", "G-T9JS51CFMT");
+    gtag('js', new Date());
+    gtag('config', 'G-T9JS51CFMT', { debug_mode: true });
   </script>
 
-  <!-- Enable Test Mode -->
+  <!-- FundraiseUp Test Mode -->
   <script>
     window.fundraiseup_livemode = false;
   </script>
 
-  <!-- Fundraise Up widget -->
+  <!-- FundraiseUp Widget -->
   <script>
-    (function (w, d, s, n, a) {
-      if (!w[n]) {
-        var l = "call,catch,on,once,set,then,track".split(","), i,
-        o = function (n) {
-          return typeof n === "function"
-            ? o.l.push([arguments]) && o
-            : function () { return o.l.push([n, arguments]) && o; };
+    (function(w,d,s,n,a){
+      if(!w[n]){
+        var l='call,catch,on,once,set,then,track'.split(','),i,
+        o=function(n){
+          return typeof n==='function'
+            ? o.l.push([arguments])&&o
+            : function(){ return o.l.push([n,arguments])&&o; };
         },
-        t = d.getElementsByTagName(s)[0],
-        j = d.createElement(s);
-        j.async = true;
-        j.src = "https://cdn.fundraiseup.com/widget/" + a;
-        t.parentNode.insertBefore(j, t);
-        o.s = Date.now();
-        o.v = 4;
-        o.h = w.location.href;
-        o.l = [];
-        for (i = 0; i < 7; i++) o[l[i]] = o(l[i]);
-        w[n] = o;
+        t=d.getElementsByTagName(s)[0],
+        j=d.createElement(s);
+        j.async=true;
+        j.src='https://cdn.fundraiseup.com/widget/'+a;
+        t.parentNode.insertBefore(j,t);
+        o.s=Date.now();
+        o.v=4;
+        o.h=w.location.href;
+        o.l=[];
+        for(i=0;i<7;i++) o[l[i]]=o(l[i]);
+        w[n]=o;
       }
-    })(window, document, "script", "FundraiseUp", "AEMZUDUM");
+    })(window,document,'script','FundraiseUp','AEMZUDUM');
   </script>
 </head>
-<body style="font-family: system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px;">
-  <h1>Helping Hand — Fundraise Up GA4 Demo</h1>
-  
-  <!-- Donate Button -->
-  <a href="#XJKDHSTQ" id="donate-button" style="display: inline-block; background: #2196F3; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0;">Donate Now</a>
+
+<body>
+  <h1>FundraiseUp + GA4 Integration Test</h1>
+
+  <!-- FundraiseUp Donate Button -->
+  <a href="#XJKDHSTQ">Donate</a>
 
   <script>
-    console.log("🔧 Starting FundraiseUp + GA4 Integration");
-    
-    // Test event to verify GA4 is working
-    gtag('event', 'page_ready', {
-      event_category: 'test'
+    // Checkout opened event
+    FundraiseUp.on('checkout.open', function () {
+      gtag('event', 'checkout_opened', {
+        event_category: 'fundraiseup'
+      });
     });
 
-    // Use FundraiseUp.on() API method for proper event tracking
-    FundraiseUp.on('checkoutOpen', function(details) {
-      console.log("🎉 CHECKOUT OPENED");
-      console.log("   Full details:", details);
-      
-      gtag('event', 'begin_checkout', {
-        event_category: 'fundraiseup',
-        event_label: details.campaign ? details.campaign.name : 'checkout_opened'
-      });
-      
-      console.log("✅ begin_checkout sent to GA4");
-    });
-    
-    FundraiseUp.on('donationComplete', function(details) {
-      console.log("🎉 DONATION COMPLETED");
-      console.log("   Full details:", details);
-      
-      // Extract donation data
-      var donation = details.donation || {};
-      var campaign = details.campaign || {};
-      var supporter = details.supporter || {};
-      
-      var amount = donation.amount || 0;
+    // Donation completed event
+    FundraiseUp.on('donation.complete', function (donation) {
+
+      // Convert cents to dollars
+      var amount = donation.amount / 100;
       var currency = donation.currency || 'USD';
-      var transactionId = donation.id || '';
-      var campaignId = campaign.id || '';
-      var campaignName = campaign.name || 'Donation';
-      
-      console.log("   Amount:", amount, currency);
-      console.log("   Transaction ID:", transactionId);
-      console.log("   Campaign:", campaignName);
-      
-      // Send GA4 purchase event with proper e-commerce structure
+
+      // Custom confirmation event
+      gtag('event', 'donation_completed', {
+        value: amount,
+        currency: currency
+      });
+
+      // GA4 ecommerce purchase event
       gtag('event', 'purchase', {
-        transaction_id: transactionId,
+        transaction_id: donation.id,
         value: amount,
         currency: currency,
         items: [{
-          item_id: campaignId,
-          item_name: campaignName,
+          item_id: donation.campaign.id,
+          item_name: donation.campaign.name,
           item_category: 'Donation',
           price: amount,
           quantity: 1
         }]
       });
-      
-      console.log("✅ purchase event sent to GA4 with e-commerce data");
-      
-      // Also send custom donation_completed event for additional tracking
-      gtag('event', 'donation_completed', {
-        event_category: 'fundraiseup',
-        event_label: campaignName,
-        value: amount,
-        currency: currency,
-        transaction_id: transactionId,
-        payment_method: donation.paymentMethod || 'unknown',
-        is_recurring: donation.recurring || false
-      });
-      
-      console.log("✅ donation_completed event sent");
     });
-    
-    console.log("✅ FundraiseUp event listeners initialized");
   </script>
-
-  <!-- Info Panel -->
-  <div style="margin-top: 40px; padding: 20px; background: #f0f7ff; border-left: 4px solid #2196F3;">
-    <h3 style="margin-top: 0; color: #1565C0;">✅ Integration Active</h3>
-    <p><strong>Tracking:</strong></p>
-    <ul style="line-height: 1.8;">
-      <li><code>begin_checkout</code> - When checkout modal opens (GA4 standard event)</li>
-      <li><code>purchase</code> - GA4 e-commerce event with full transaction details (amount, currency, items)</li>
-      <li><code>donation_completed</code> - Custom event with additional donation metadata</li>
-    </ul>
-    <p><strong>Method:</strong> FundraiseUp.on() JavaScript API</p>
-    <p style="margin-bottom: 0; color: #666; font-size: 14px;">
-      <strong>Note:</strong> Make a test donation of $700 to verify. Check browser console for detailed logs and GA4 Realtime reports for events.
-    </p>
-  </div>
-
-  <!-- Testing Instructions -->
-  <div style="margin-top: 20px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107;">
-    <h3 style="margin-top: 0; color: #856404;">📋 Testing Instructions</h3>
-    <ol style="line-height: 1.8;">
-      <li>Click the "Donate Now" button above</li>
-      <li>In the checkout modal, enter $700 as the donation amount</li>
-      <li>Use test card: <code>4242 4242 4242 4242</code>, any future expiry, any CVC</li>
-      <li>Complete the donation</li>
-      <li>Check browser console for event logs</li>
-      <li>Open GA4 Realtime report to see:
-        <ul>
-          <li><code>begin_checkout</code> event</li>
-          <li><code>purchase</code> event with $700 value</li>
-          <li><code>donation_completed</code> event</li>
-        </ul>
-      </li>
-    </ol>
-  </div>
 </body>
 </html>
