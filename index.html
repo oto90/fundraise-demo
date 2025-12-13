@@ -150,20 +150,24 @@
 
     // METHOD 3: Fallback - track ALL clicks and check if they're opening the modal
     var modalCheckInterval;
+    var clickCount = 0;
     document.addEventListener('click', function(e) {
-      console.log("🖱️ Global click on:", e.target.tagName, e.target.className);
+      clickCount++;
+      console.log("🖱️ CLICK #" + clickCount + " detected on:", e.target.tagName, e.target.className, e.target.id);
+      console.log("   Full element:", e.target);
       
       // After any click, check if a modal appeared
       clearTimeout(modalCheckInterval);
       modalCheckInterval = setTimeout(function() {
         var modals = document.querySelectorAll('[class*="modal"], [class*="overlay"], [role="dialog"], iframe[src*="fundraiseup"]');
+        console.log("   Checking for modals... found:", modals.length);
         if (modals.length > 0) {
           console.log("👁️ Modal detected after click!");
           sendCheckoutEvent('modal_detected');
         }
       }, 100);
     }, true);
-    console.log("✅ Global click listener with modal detection active");
+    console.log("✅ Global click listener with modal detection active - will log EVERY click");
 
     // METHOD 4: Monitor for iframe (FundraiseUp checkout opens in iframe)
     setInterval(function() {
