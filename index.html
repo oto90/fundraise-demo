@@ -1,94 +1,77 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>FundraiseUp + GA4 Test</title>
+<html>
+  <head>
+    <!-- Google Tag Manager -->
+    <script>
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != "dataLayer" ? "&l=" + l : "";
+        j.async = true;
+        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, "script", "dataLayer", "GTM-M4LRMBK3");
+    </script>
+    <!-- End Google Tag Manager -->
 
-  <!-- GA4 -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-T9JS51CFMT"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){ dataLayer.push(arguments); }
-    gtag('js', new Date());
-    gtag('config', 'G-T9JS51CFMT', { debug_mode: true });
-  </script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 
-  <!-- FundraiseUp Test Mode -->
-  <script>
-    window.fundraiseup_livemode = false;
-  </script>
-
-  <!-- FundraiseUp Widget -->
-  <script>
-    (function(w,d,s,n,a){
-      if(!w[n]){
-        var l='call,catch,on,once,set,then,track'.split(','),i,
-        o=function(n){
-          return typeof n==='function'
-            ? o.l.push([arguments])&&o
-            : function(){ return o.l.push([n,arguments])&&o; };
-        },
-        t=d.getElementsByTagName(s)[0],
-        j=d.createElement(s);
-        j.async=true;
-        j.src='https://cdn.fundraiseup.com/widget/'+a;
-        t.parentNode.insertBefore(j,t);
-        o.s=Date.now();
-        o.v=4;
-        o.h=w.location.href;
-        o.l=[];
-        for(i=0;i<7;i++) o[l[i]]=o(l[i]);
-        w[n]=o;
-      }
-    })(window,document,'script','FundraiseUp','AEMZUDUM');
-  </script>
-</head>
-
-<body>
-  <h1>FundraiseUp + GA4 Integration</h1>
-
-  <!-- Donate Button -->
-  <a href="#XJKDHSTQ">Donate</a>
-
-  <script>
-    // IMPORTANT: wait until FundraiseUp is fully ready
-    FundraiseUp.then(function () {
-
-      // Checkout opened
-      FundraiseUp.on('checkout.open', function () {
-        gtag('event', 'checkout_opened', {
-          event_category: 'fundraiseup'
+    <!-- Fundraise Up: the new standard for online giving -->
+    <script>
+      (function (w, d, s, n, a) {
+        if (!w[n]) {
+          var l = "call,catch,on,once,set,then,track".split(","),
+            i,
+            o = function (n) {
+              return "function" == typeof n
+                ? o.l.push([arguments]) && o
+                : function () {
+                    return o.l.push([n, arguments]) && o;
+                  };
+            },
+            t = d.getElementsByTagName(s)[0],
+            j = d.createElement(s);
+          j.async = !0;
+          j.src = "https://cdn.fundraiseup.com/widget/" + a;
+          t.parentNode.insertBefore(j, t);
+          o.s = Date.now();
+          o.v = 4;
+          o.h = w.location.href;
+          o.l = [];
+          for (i = 0; i < 7; i++) o[l[i]] = o(l[i]);
+          w[n] = o;
+        }
+      })(window, document, "script", "FundraiseUp", "AEMZUDUM");
+    </script>
+    <!-- End Fundraise Up -->
+    <script>
+      window.fundraiseup_livemode = false;
+    </script>
+    <a href="#XJKDHSTQ" style="display: none"></a>
+  </head>
+  <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-M4LRMBK3"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
+    <script>
+      document
+        .getElementById("donate-button")
+        .addEventListener("click", function () {
+          window.dataLayer.push({
+            event: "Donate",
+            event_category: "Button Clicks",
+            event_label: "Donate Button",
+          });
         });
-      });
-
-      // Donation completed
-      FundraiseUp.on('donation.complete', function (donation) {
-        var amount = donation.amount / 100;
-        var currency = donation.currency || 'USD';
-
-        // Custom event
-        gtag('event', 'donation_completed', {
-          value: amount,
-          currency: currency
-        });
-
-        // GA4 ecommerce event
-        gtag('event', 'purchase', {
-          transaction_id: donation.id,
-          value: amount,
-          currency: currency,
-          items: [{
-            item_id: donation.campaign.id,
-            item_name: donation.campaign.name,
-            item_category: 'Donation',
-            price: amount,
-            quantity: 1
-          }]
-        });
-      });
-
-    });
-  </script>
-</body>
+    </script>
+  </body>
 </html>
