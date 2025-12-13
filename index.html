@@ -107,18 +107,40 @@
     }
 
     // METHOD 1: Use FundraiseUp API (primary method)
+    console.log("🔍 Checking FundraiseUp object:", typeof FundraiseUp, FundraiseUp);
+    
     if (typeof FundraiseUp !== 'undefined') {
+      // Test if the API is actually functional
+      console.log("🧪 Testing FundraiseUp API methods:");
+      console.log("   - FundraiseUp.on exists?", typeof FundraiseUp.on === 'function');
+      
       FundraiseUp.on('checkout_open', function(data) {
-        console.log("📢 FundraiseUp API: checkout_open fired", data);
+        console.log("🎉🎉🎉 FundraiseUp API: checkout_open FIRED! 🎉🎉🎉");
+        console.log("   Data:", data);
         sendCheckoutEvent('fundraiseup_api');
       });
 
       FundraiseUp.on('donation_complete', function(data) {
-        console.log("📢 FundraiseUp API: donation_complete fired", data);
+        console.log("🎉🎉🎉 FundraiseUp API: donation_complete FIRED! 🎉🎉🎉");
+        console.log("   Data:", data);
         sendDonationEvent(data);
+      });
+      
+      // Also try these alternative event names
+      FundraiseUp.on('checkout_opened', function(data) {
+        console.log("🎉 Alternative event: checkout_opened fired");
+        sendCheckoutEvent('fundraiseup_api_alt');
+      });
+      
+      FundraiseUp.on('open', function(data) {
+        console.log("🎉 Alternative event: open fired");
+        sendCheckoutEvent('fundraiseup_open');
       });
 
       console.log("✅ FundraiseUp API event handlers registered");
+      console.log("   Registered events: checkout_open, donation_complete, checkout_opened, open");
+    } else {
+      console.error("❌ FundraiseUp object not found!");
     }
 
     // METHOD 2: Watch for FundraiseUp widget button to appear and track clicks
@@ -170,14 +192,31 @@
     console.log("✅ Global click listener with modal detection active - will log EVERY click");
 
     // METHOD 4: Monitor for iframe (FundraiseUp checkout opens in iframe)
+    var iframeCheckCount = 0;
+    var iframeFound = false;
     setInterval(function() {
-      var iframes = document.querySelectorAll('iframe[src*="fundraiseup"]');
-      if (iframes.length > 0 && !checkoutTracked) {
-        console.log("🎯 FundraiseUp iframe detected!");
+      iframeCheckCount++;
+      var iframes = document.querySelectorAll('iframe');
+      
+      if (iframeCheckCount % 10 === 0) {
+        console.log("🔍 Iframe check #" + iframeCheckCount + " - Total iframes:", iframes.length);
+      }
+      
+      if (iframes.length > 0 && !iframeFound) {
+        iframeFound = true;
+        console.log("🎯🎯🎯 IFRAME DETECTED! 🎯🎯🎯");
+        iframes.forEach(function(iframe, index) {
+          console.log("   Iframe #" + index + " src:", iframe.src);
+        });
         sendCheckoutEvent('iframe_detected');
+        
+        // Reset after 5 seconds so we can detect if user closes and reopens
+        setTimeout(function() {
+          iframeFound = false;
+        }, 5000);
       }
     }, 500);
-    console.log("✅ Iframe monitoring started");
+    console.log("✅ Iframe monitoring started - checking every 500ms");
   </script>
 
   <!-- Debug panel -->
