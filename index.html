@@ -1,77 +1,209 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <!-- Google Tag Manager -->
-    <script>
-      (function (w, d, s, l, i) {
-        w[l] = w[l] || [];
-        w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
-        var f = d.getElementsByTagName(s)[0],
-          j = d.createElement(s),
-          dl = l != "dataLayer" ? "&l=" + l : "";
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Helping Hand — Fundraise Up GA4 Demo</title>
+  
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-T9JS51CFMT"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    gtag("js", new Date());
+    
+    // Enable debug mode to see events in GA4 DebugView
+    gtag("config", "G-T9JS51CFMT", {
+      debug_mode: true
+    });
+  </script>
+
+  <!-- Enable Test Mode -->
+  <script>
+    window.fundraiseup_livemode = false;
+  </script>
+
+  <!-- Fundraise Up widget -->
+  <script>
+    (function (w, d, s, n, a) {
+      if (!w[n]) {
+        var l = "call,catch,on,once,set,then,track".split(","), i,
+        o = function (n) {
+          return typeof n === "function"
+            ? o.l.push([arguments]) && o
+            : function () { return o.l.push([n, arguments]) && o; };
+        },
+        t = d.getElementsByTagName(s)[0],
+        j = d.createElement(s);
         j.async = true;
-        j.src = "https://www.googletagmanager.com/gtm.js?id=" + i + dl;
-        f.parentNode.insertBefore(j, f);
-      })(window, document, "script", "dataLayer", "GTM-M4LRMBK3");
-    </script>
-    <!-- End Google Tag Manager -->
+        j.src = "https://cdn.fundraiseup.com/widget/" + a;
+        t.parentNode.insertBefore(j, t);
+        o.s = Date.now();
+        o.v = 4;
+        o.h = w.location.href;
+        o.l = [];
+        for (i = 0; i < 7; i++) o[l[i]] = o(l[i]);
+        w[n] = o;
+      }
+    })(window, document, "script", "FundraiseUp", "AEMZUDUM");
+  </script>
+</head>
+<body style="font-family: system-ui, sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px;">
+  <h1>Helping Hand — Fundraise Up GA4 Demo</h1>
+  
+  <!-- Donate Button -->
+  <a href="#XJKDHSTQ" id="donate-button" style="display: inline-block; background: #2196F3; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 20px 0;">Donate Now</a>
 
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script>
+    console.log("🔧 Starting FundraiseUp + GA4 Integration (Debug Mode)");
+    
+    // Test event to verify GA4 is working
+    gtag('event', 'page_ready', {
+      event_category: 'test'
+    });
 
-    <!-- Fundraise Up: the new standard for online giving -->
-    <script>
-      (function (w, d, s, n, a) {
-        if (!w[n]) {
-          var l = "call,catch,on,once,set,then,track".split(","),
-            i,
-            o = function (n) {
-              return "function" == typeof n
-                ? o.l.push([arguments]) && o
-                : function () {
-                    return o.l.push([n, arguments]) && o;
-                  };
-            },
-            t = d.getElementsByTagName(s)[0],
-            j = d.createElement(s);
-          j.async = !0;
-          j.src = "https://cdn.fundraiseup.com/widget/" + a;
-          t.parentNode.insertBefore(j, t);
-          o.s = Date.now();
-          o.v = 4;
-          o.h = w.location.href;
-          o.l = [];
-          for (i = 0; i < 7; i++) o[l[i]] = o(l[i]);
-          w[n] = o;
-        }
-      })(window, document, "script", "FundraiseUp", "AEMZUDUM");
-    </script>
-    <!-- End Fundraise Up -->
-    <script>
-      window.fundraiseup_livemode = false;
-    </script>
-    <a href="#XJKDHSTQ" style="display: none"></a>
-  </head>
-  <body>
-    <!-- Google Tag Manager (noscript) -->
-    <noscript
-      ><iframe
-        src="https://www.googletagmanager.com/ns.html?id=GTM-M4LRMBK3"
-        height="0"
-        width="0"
-        style="display: none; visibility: hidden"
-      ></iframe
-    ></noscript>
-    <!-- End Google Tag Manager (noscript) -->
-    <script>
-      document
-        .getElementById("donate-button")
-        .addEventListener("click", function () {
-          window.dataLayer.push({
-            event: "Donate",
-            event_category: "Button Clicks",
-            event_label: "Donate Button",
-          });
-        });
-    </script>
-  </body>
+    // Use FundraiseUp.on() API method for proper event tracking
+    FundraiseUp.on('checkoutOpen', function(details) {
+      console.log("🎉 CHECKOUT OPENED");
+      console.log("   Full details:", details);
+      
+      var eventData = {
+        event_category: 'fundraiseup',
+        event_label: details.campaign ? details.campaign.name : 'checkout_opened'
+      };
+      
+      gtag('event', 'begin_checkout', eventData);
+      console.log("✅ begin_checkout sent to GA4:", eventData);
+    });
+    
+    FundraiseUp.on('donationComplete', function(details) {
+      console.log("🎉 DONATION COMPLETED");
+      console.log("   Full details:", details);
+      
+      // Extract donation data
+      var donation = details.donation || {};
+      var campaign = details.campaign || {};
+      var supporter = details.supporter || {};
+      
+      var amount = donation.amount || 0;
+      var currency = donation.currency || 'USD';
+      var transactionId = donation.id || '';
+      var campaignId = campaign.id || '';
+      var campaignName = campaign.name || 'Donation';
+      
+      console.log("   Amount:", amount, currency);
+      console.log("   Transaction ID:", transactionId);
+      console.log("   Campaign:", campaignName);
+      
+      // Send GA4 purchase event with proper e-commerce structure
+      var purchaseData = {
+        transaction_id: transactionId,
+        value: amount,
+        currency: currency,
+        items: [{
+          item_id: campaignId,
+          item_name: campaignName,
+          item_category: 'Donation',
+          price: amount,
+          quantity: 1
+        }]
+      };
+      
+      gtag('event', 'purchase', purchaseData);
+      
+      console.log("✅ purchase event sent to GA4 with e-commerce data:");
+      console.log("   Transaction ID:", transactionId);
+      console.log("   Value:", amount);
+      console.log("   Currency:", currency);
+      console.log("   Full purchase data:", JSON.stringify(purchaseData, null, 2));
+      
+      // Also send custom donation_completed event for additional tracking
+      var customEventData = {
+        event_category: 'fundraiseup',
+        event_label: campaignName,
+        value: amount,
+        currency: currency,
+        transaction_id: transactionId,
+        payment_method: donation.paymentMethod || 'unknown',
+        is_recurring: donation.recurring || false
+      };
+      
+      gtag('event', 'donation_completed', customEventData);
+      
+      console.log("✅ donation_completed event sent:", customEventData);
+      
+      // Log dataLayer to verify
+      console.log("📊 Current dataLayer:", window.dataLayer);
+    });
+    
+    console.log("✅ FundraiseUp event listeners initialized");
+    console.log("🐛 Debug mode enabled - check GA4 DebugView");
+  </script>
+
+  <!-- Info Panel -->
+  <div style="margin-top: 40px; padding: 20px; background: #f0f7ff; border-left: 4px solid #2196F3;">
+    <h3 style="margin-top: 0; color: #1565C0;">✅ Integration Active (Debug Mode)</h3>
+    <p><strong>Tracking:</strong></p>
+    <ul style="line-height: 1.8;">
+      <li><code>begin_checkout</code> - When checkout modal opens (GA4 standard event)</li>
+      <li><code>purchase</code> - GA4 e-commerce event with full transaction details (amount, currency, items)</li>
+      <li><code>donation_completed</code> - Custom event with additional donation metadata</li>
+    </ul>
+    <p><strong>Method:</strong> FundraiseUp.on() JavaScript API</p>
+    <p style="margin-bottom: 0; color: #666; font-size: 14px;">
+      <strong>Debug mode enabled:</strong> Events will appear in GA4 DebugView immediately.
+    </p>
+  </div>
+
+  <!-- Testing Instructions -->
+  <div style="margin-top: 20px; padding: 20px; background: #fff3cd; border-left: 4px solid #ffc107;">
+    <h3 style="margin-top: 0; color: #856404;">📋 How to Verify Revenue is Tracked</h3>
+    
+    <h4 style="color: #856404;">Method 1: GA4 DebugView (Immediate - BEST FOR TESTING)</h4>
+    <ol style="line-height: 1.8;">
+      <li>In GA4, go to <strong>Admin</strong> (gear icon) → <strong>DebugView</strong></li>
+      <li>Make a test donation of $700</li>
+      <li>You'll see the <code>purchase</code> event appear in DebugView</li>
+      <li>Click on the <code>purchase</code> event</li>
+      <li>You should see parameters including:
+        <ul>
+          <li><code>value: 700</code></li>
+          <li><code>currency: USD</code></li>
+          <li><code>transaction_id: XXXXXXXX</code></li>
+          <li><code>items: [...]</code> with item details</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h4 style="color: #856404;">Method 2: Realtime Report</h4>
+    <ol style="line-height: 1.8;">
+      <li>Go to <strong>Reports</strong> → <strong>Realtime</strong></li>
+      <li>Look for the <strong>Event count by Event name</strong> card</li>
+      <li>Click on the <code>purchase</code> event</li>
+      <li>You should see event parameters (but revenue might not show immediately)</li>
+    </ol>
+
+    <h4 style="color: #856404;">Method 3: E-commerce Reports (24-48 hours delay)</h4>
+    <p>Full e-commerce reports with revenue appear after 24-48 hours in:</p>
+    <ul>
+      <li><strong>Reports</strong> → <strong>Monetization</strong> → <strong>Ecommerce purchases</strong></li>
+    </ul>
+
+    <h4 style="color: #856404;">Test Card Details</h4>
+    <ul>
+      <li>Card number: <code>4242 4242 4242 4242</code></li>
+      <li>Expiry: Any future date (e.g., 12/25)</li>
+      <li>CVC: Any 3 digits (e.g., 123)</li>
+    </ul>
+  </div>
+
+  <!-- DataLayer Inspector -->
+  <div style="margin-top: 20px; padding: 20px; background: #e8f5e9; border-left: 4px solid #4caf50;">
+    <h3 style="margin-top: 0; color: #2e7d32;">🔍 DataLayer Inspector</h3>
+    <p>Open browser console after making a donation to see the full dataLayer content logged.</p>
+    <button onclick="console.log('Current dataLayer:', window.dataLayer)" style="background: #4caf50; color: white; border: none; padding: 10px 20px; border-radius: 3px; cursor: pointer;">
+      Log DataLayer to Console
+    </button>
+  </div>
+</body>
 </html>
