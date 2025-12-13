@@ -113,22 +113,30 @@
       // METHOD 1: Track direct button clicks using MOUSEDOWN (fires before click is stopped)
       var donateBtn = document.getElementById('donate-button');
       if (donateBtn) {
-        donateBtn.addEventListener('mousedown', function(e) {
-          console.log("🖱️ Blue button MOUSEDOWN detected");
-          sendCheckoutEvent('blue_button_mousedown');
-        }, true);
+        // Try EVERY mouse event
+        ['mousedown', 'mouseup', 'click', 'mouseover', 'mouseenter'].forEach(function(eventType) {
+          donateBtn.addEventListener(eventType, function(e) {
+            console.log("🖱️ Blue button " + eventType.toUpperCase() + " detected");
+            if (eventType === 'mousedown' || eventType === 'click') {
+              sendCheckoutEvent('blue_button_' + eventType);
+            }
+          }, true);
+        });
         
-        donateBtn.addEventListener('click', function(e) {
-          console.log("🖱️ Blue button CLICK detected");
-          sendCheckoutEvent('blue_button_click');
-        }, true);
-        
-        console.log("✅ Click + Mousedown listeners attached to blue donate button");
+        console.log("✅ All mouse event listeners attached to blue donate button");
         
         // Additional diagnostic: log button properties
         console.log("📊 Button element:", donateBtn);
         console.log("📊 Button visible?", donateBtn.offsetParent !== null);
         console.log("📊 Button dimensions:", donateBtn.getBoundingClientRect());
+        
+        // Test: manually trigger a test to confirm button is interactive
+        setTimeout(function() {
+          console.log("🧪 Testing if button is still accessible after 2 seconds...");
+          console.log("🧪 Button still exists?", document.getElementById('donate-button') !== null);
+          console.log("🧪 Button z-index:", window.getComputedStyle(donateBtn).zIndex);
+          console.log("🧪 Button pointer-events:", window.getComputedStyle(donateBtn).pointerEvents);
+        }, 2000);
       } else {
         console.error("❌ Blue button not found!");
       }
