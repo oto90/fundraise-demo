@@ -96,8 +96,25 @@
           console.log("🎉🎉🎉 DONATION COMPLETED via dataLayer! 🎉🎉🎉");
           console.log("   Event data:", data);
           
-          var amount = data.amount || (data.ecommerce && data.ecommerce.purchase && data.ecommerce.purchase.actionField && data.ecommerce.purchase.actionField.revenue) || 0;
-          var currency = data.currency || 'USD';
+          // Extract amount from the correct location in the FundraiseUp data structure
+          var amount = 0;
+          var currency = 'USD';
+          
+          // Try multiple possible locations for amount
+          if (data.FundraiseUp && data.FundraiseUp.donation && data.FundraiseUp.donation.amount) {
+            amount = data.FundraiseUp.donation.amount;
+          } else if (data.ecommerce && data.ecommerce.purchase && data.ecommerce.purchase.actionField) {
+            amount = data.ecommerce.purchase.actionField.revenue || data.ecommerce.purchase.actionField.value || 0;
+          }
+          
+          // Extract currency
+          if (data.FundraiseUp && data.FundraiseUp.donation && data.FundraiseUp.donation.currency) {
+            currency = data.FundraiseUp.donation.currency;
+          } else if (data.ecommerce && data.ecommerce.currencyCode) {
+            currency = data.ecommerce.currencyCode;
+          }
+          
+          console.log("   Extracted amount:", amount, currency);
           
           gtag('event', 'donation_completed', {
             event_category: 'fundraiseup',
