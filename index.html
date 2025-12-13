@@ -193,30 +193,26 @@
 
     // METHOD 4: Monitor for iframe (FundraiseUp checkout opens in iframe)
     var iframeCheckCount = 0;
-    var iframeFound = false;
+    var lastIframeCount = 0;
+    
     setInterval(function() {
       iframeCheckCount++;
       var iframes = document.querySelectorAll('iframe');
+      var currentCount = iframes.length;
       
       if (iframeCheckCount % 10 === 0) {
-        console.log("🔍 Iframe check #" + iframeCheckCount + " - Total iframes:", iframes.length);
+        console.log("🔍 Iframe check #" + iframeCheckCount + " - Total iframes:", currentCount);
       }
       
-      if (iframes.length > 0 && !iframeFound) {
-        iframeFound = true;
-        console.log("🎯🎯🎯 IFRAME DETECTED! 🎯🎯🎯");
-        iframes.forEach(function(iframe, index) {
-          console.log("   Iframe #" + index + " src:", iframe.src);
-        });
+      // Only trigger if iframe count INCREASED (modal opened)
+      if (currentCount > lastIframeCount && currentCount >= 3) {
+        console.log("🎯 IFRAME COUNT INCREASED from " + lastIframeCount + " to " + currentCount);
         sendCheckoutEvent('iframe_detected');
-        
-        // Reset after 5 seconds so we can detect if user closes and reopens
-        setTimeout(function() {
-          iframeFound = false;
-        }, 5000);
       }
+      
+      lastIframeCount = currentCount;
     }, 500);
-    console.log("✅ Iframe monitoring started - checking every 500ms");
+    console.log("✅ Iframe monitoring started - tracking iframe count changes");
   </script>
 
   <!-- Debug panel -->
