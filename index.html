@@ -10,8 +10,8 @@
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){ dataLayer.push(arguments); }
-    gtag("js", new Date());
-    gtag("config", "G-T9JS51CFMT");
+    gtag('js', new Date());
+    gtag('config', 'G-T9JS51CFMT');
   </script>
 
   <!-- Enable Fundraise Up test mode -->
@@ -42,24 +42,25 @@
   </script>
 </head>
 
-<body style="font-family: Arial, sans-serif; padding: 40px;">
+<body style="font-family: system-ui, sans-serif; padding: 40px;">
   <h1>Helping Hand — Fundraise Up GA4 Demo</h1>
 
-  <!-- Fundraise Up button -->
+  <!-- Fundraise Up donation button -->
   <a href="#XJKDHSTQ" style="display:none"></a>
 
   <script>
-    // Track checkout open
+    // Track checkout opening
     FundraiseUp.on('checkoutOpen', function () {
       gtag('event', 'begin_checkout');
     });
 
-    // Track donation completion
+    // Track successful donation
     FundraiseUp.on('donationComplete', function (details) {
       var donation = details.donation || {};
-      var amount = Number(donation.amount) || 0;
-      var currency = donation.currency || 'USD';
-      var transactionId = donation.id || String(Date.now());
+
+      var amount = Number(donation.amount);
+      var currency = donation.currency;
+      var transactionId = donation.id;
 
       // GA4 purchase event (required for revenue reporting)
       gtag('event', 'purchase', {
@@ -72,12 +73,6 @@
           price: amount,
           quantity: 1
         }]
-      });
-
-      // Optional custom event
-      gtag('event', 'donation_completed', {
-        value: amount,
-        currency: currency
       });
     });
   </script>
