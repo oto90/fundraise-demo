@@ -12,12 +12,15 @@
     function gtag(){ dataLayer.push(arguments); }
     gtag("js", new Date());
     
-    // Enable debug mode to see events in GA4 DebugView
+    // Configure GA4 with send_page_view enabled
     gtag("config", "G-T9JS51CFMT", {
-      debug_mode: true
+      debug_mode: true,
+      send_page_view: true
     });
     
     console.log("✅ GA4 initialized with debug mode");
+    console.log("   Measurement ID: G-T9JS51CFMT");
+    console.log("   Page view will be sent automatically");
   </script>
 
   <!-- Enable Test Mode -->
@@ -115,15 +118,37 @@
         currency: currency,
         transaction_id: transactionId,
         value: amount,
-        items: items
+        items: items,
+        // Add additional parameters for better reporting
+        donation_amount: amount,
+        campaign_name: campaignName,
+        payment_method: donation.paymentMethod || 'unknown'
       };
       
       console.log("📦 Sending purchase event to GA4:");
       console.log(JSON.stringify(purchaseEventData, null, 2));
       
+      // Send the purchase event
       gtag('event', 'purchase', purchaseEventData);
       
       console.log("✅ purchase event sent to GA4");
+      console.log("   This should appear in:");
+      console.log("   - DebugView immediately (if you have it open)");
+      console.log("   - Realtime report within ~30 seconds");
+      console.log("   - E-commerce reports within 24-48 hours");
+      
+      // Also send donation_completed custom event
+      gtag('event', 'donation_completed', {
+        currency: currency,
+        value: amount,
+        transaction_id: transactionId,
+        campaign_name: campaignName,
+        donation_amount: amount,
+        payment_method: donation.paymentMethod || 'unknown',
+        is_recurring: donation.recurring || false
+      });
+      
+      console.log("✅ donation_completed event sent to GA4");
       console.log("");
       
       // Wait a moment then verify it's in dataLayer
